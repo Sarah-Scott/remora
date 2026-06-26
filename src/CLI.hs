@@ -9,10 +9,13 @@ import Data.Maybe
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
+import Data.ByteString.Lazy qualified as B
 import Futhark qualified
 import Interpreter qualified
 import Parser qualified
 import SExp
+import Data.Aeson (encode)
+import Serializer ()
 import System.Console.CmdArgs
 import System.FilePath (dropExtension, takeFileName, (</>))
 import System.IO
@@ -40,16 +43,18 @@ data RemoraMode
   | Parse
       { file :: Maybe FilePath,
         expr :: Maybe String,
-        sexp :: Bool
+        sexp :: Bool,
+        ast  :: Maybe FilePath
       }
   deriving (Data, Typeable, Show, Eq)
-
+-- TODO : parse requires -s flag
 parse :: RemoraMode
 parse =
   Parse
     { file = Nothing &= help "Parse the passed file.",
       expr = Nothing &= help "Parse an expression passed as an argument.",
-      sexp = False &= help "Print the parsed result as an s-expression."
+      sexp = False &= help "Print the parsed result as an s-expression.",
+      ast  = Nothing &= help "Encode the parsed result as JSON to passed file."
     }
     &= details
       [ "Parse a remora program or expression.",
@@ -57,7 +62,10 @@ parse =
         "Expressions may be passed directly as an argument using the -e flag, e.g.:",
         "> remora parse -e \"[[1 2] [3 4]]\"",
         "",
-        "If neither -f nor -e is passed, will read input from stdin."
+        "If neither -f nor -e is passed, will read input from stdin.",
+        "",
+        "Parsed output may be encoded as JSON to file using the -a flag, e.g.:",
+        "> remora parse -e \"[[1 2] [3 4]]\" -a \"example1.json\""
       ]
 
 interpret :: RemoraMode
@@ -113,7 +121,7 @@ main = do
             Interpreter.interpret prelude expr'
       case m of
         Left err -> T.putStrLn err
-        Right v -> T.putStrLn $ prettyText v
+        Right v ->  T.putStrLn $ prettyText v
     Futhark mfile mexpr mbackend -> do
       input <- handleInput mfile mexpr
       let m = do
@@ -128,13 +136,17 @@ main = do
             Just backend -> do
               res <- futharkCompile backend (takeFileName $ dropExtension $ fromMaybe "<cli>" mfile) v
               putStrLn res
-    Parse mfile mexpr sexp -> do
+    Parse mfile mexpr sexp mast -> do
       input <- handleInput mfile mexpr
       case doParse mfile input of
         Left err -> T.putStrLn err
-        Right expr
-          | sexp -> T.putStrLn $ prettyText (toSExp expr :: SExp Text)
-          | otherwise -> T.putStrLn $ prettyText expr
+        Right expr -> do
+          if sexp
+            then T.putStrLn $ prettyText (toSExp expr :: SExp Text)
+            else T.putStrLn $ prettyText expr
+          case mast of
+            Just astFile -> B.writeFile astFile (encode expr)
+            Nothing      -> return ()
   where
     handleInput :: Maybe FilePath -> Maybe String -> IO Text
     handleInput (Just path) _ = T.readFile path

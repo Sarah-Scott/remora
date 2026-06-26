@@ -39,6 +39,7 @@ library
       Substitute
       SExp
       Symbolic
+      Serializer
     -- other-modules:
     -- other-extensions:
     build-depends:
@@ -54,7 +55,9 @@ library
       process,
       filepath,
       sbv,
-      futhark == 0.25.33
+      futhark == 0.25.33,
+      aeson >= 2.0,
+      bytestring
 
     hs-source-dirs:   src
 
