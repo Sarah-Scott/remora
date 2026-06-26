@@ -109,9 +109,9 @@ instance ToJSON (Syntax.Bind Syntax.NoInfo T.Text) where
   toJSON (Syntax.BindFun v ps mt body Syntax.NoInfo _) =
     object ["tag" .= ("BindFun"    :: T.Text), "name" .= v, "params"  .= ps, "type" .= mt, "body" .= body]
   toJSON (Syntax.BindTFun v ps mt body Syntax.NoInfo _) =
-    object ["tag" .= ("BindTFun"   :: T.Text), "name" .= v, "tparams" .= ps, "type" .= mt, "body" .= body]
+    object ["tag" .= ("BindTFun"   :: T.Text), "name" .= v, "params" .= ps, "type" .= mt, "body" .= body]
   toJSON (Syntax.BindIFun v ps mt body Syntax.NoInfo _) =
-    object ["tag" .= ("BindIFun"   :: T.Text), "name" .= v, "eparams" .= ps, "type" .= mt, "body" .= body]
+    object ["tag" .= ("BindIFun"   :: T.Text), "name" .= v, "params" .= ps, "type" .= mt, "body" .= body]
 
 -- ---------------------------------------------------------------------------
 -- Exp
@@ -130,10 +130,10 @@ instance ToJSON (Syntax.Exp Syntax.NoInfo T.Text) where
   toJSON (Syntax.App f args Syntax.NoInfo _) =
     object ["tag" .= ("App"  :: T.Text), "fun" .= f, "args"    .= args]
   toJSON (Syntax.TApp f ts Syntax.NoInfo _) =
-    object ["tag" .= ("TApp" :: T.Text), "fun" .= f, "targs"   .= ts]
+    object ["tag" .= ("TApp" :: T.Text), "fun" .= f, "args"   .= ts]
   toJSON (Syntax.IApp f extents Syntax.NoInfo _) =
-    object ["tag" .= ("IApp" :: T.Text), "fun" .= f, "extents" .= extents]
+    object ["tag" .= ("IApp" :: T.Text), "fun" .= f, "args" .= extents]
   toJSON (Syntax.Unbox eps v src body Syntax.NoInfo _) =
-    object ["tag" .= ("Unbox" :: T.Text), "eparams" .= eps, "name" .= v, "src" .= src, "body" .= body]
+    object ["tag" .= ("Unbox" :: T.Text), "extents" .= eps, "name" .= v, "target" .= src, "body" .= body]
   toJSON (Syntax.Let binds body Syntax.NoInfo _) =
     object ["tag" .= ("Let"   :: T.Text), "binds" .= binds, "body" .= body]
