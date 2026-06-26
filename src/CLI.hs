@@ -14,7 +14,8 @@ import Futhark qualified
 import Interpreter qualified
 import Parser qualified
 import SExp
-import Data.Aeson (encode)
+-- import Data.Aeson (encode)
+import Data.Aeson.Encode.Pretty (encodePretty) 
 import Serializer ()
 import System.Console.CmdArgs
 import System.FilePath (dropExtension, takeFileName, (</>))
@@ -127,7 +128,7 @@ main = do
         Left err -> T.putStrLn err
         Right v ->  T.putStrLn $ prettyText v
       case (mast, doParse mfile input) of
-        (Just astFile, Right expr) -> B.writeFile astFile (encode expr)
+        (Just astFile, Right expr) -> B.writeFile astFile (encodePretty expr)
         (_, _)      -> return ()
     Futhark mfile mexpr mbackend -> do
       input <- handleInput mfile mexpr
@@ -152,7 +153,7 @@ main = do
             then T.putStrLn $ prettyText (toSExp expr :: SExp Text)
             else T.putStrLn $ prettyText expr
           case mast of
-            Just astFile -> B.writeFile astFile (encode expr)
+            Just astFile -> B.writeFile astFile (encodePretty expr)
             Nothing      -> return ()
   where
     handleInput :: Maybe FilePath -> Maybe String -> IO Text

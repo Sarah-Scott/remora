@@ -57,6 +57,7 @@ library
       sbv,
       futhark == 0.25.33,
       aeson >= 2.0,
+      aeson-pretty,
       bytestring
 
     hs-source-dirs:   src
