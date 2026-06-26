@@ -33,7 +33,8 @@ data RemoraMode
   = REPL
   | Interpret
       { file :: Maybe FilePath,
-        expr :: Maybe String
+        expr :: Maybe String,
+        ast_parse :: Maybe FilePath
       }
   | Futhark
       { file :: Maybe FilePath,
@@ -44,7 +45,7 @@ data RemoraMode
       { file :: Maybe FilePath,
         expr :: Maybe String,
         sexp :: Bool,
-        ast  :: Maybe FilePath
+        ast_parse  :: Maybe FilePath
       }
   deriving (Data, Typeable, Show, Eq)
 -- TODO : parse requires -s flag
@@ -54,7 +55,7 @@ parse =
     { file = Nothing &= help "Parse the passed file.",
       expr = Nothing &= help "Parse an expression passed as an argument.",
       sexp = False &= help "Print the parsed result as an s-expression.",
-      ast  = Nothing &= help "Encode the parsed result as JSON to passed file."
+      ast_parse  = Nothing &= help "Encode the parsed result as JSON to passed file."
     }
     &= details
       [ "Parse a remora program or expression.",
@@ -64,7 +65,7 @@ parse =
         "",
         "If neither -f nor -e is passed, will read input from stdin.",
         "",
-        "Parsed output may be encoded as JSON to file using the -a flag, e.g.:",
+        "Parsed result may be encoded as JSON to file using the -a flag, e.g.:",
         "> remora parse -e \"[[1 2] [3 4]]\" -a \"example1.json\""
       ]
 
@@ -72,12 +73,15 @@ interpret :: RemoraMode
 interpret =
   Interpret
     { file = Nothing &= help "Interpret the passed file.",
-      expr = Nothing &= help "Interpret an expression passed as an argument."
+      expr = Nothing &= help "Interpret an expression passed as an argument.",
+      ast_parse = Nothing &= help "Encode the parsed input as JSON to passed file."
     }
     &= details
       [ "Interpret a remora program or expression.",
         "",
-        "If neither -f nor -e is passed, will read input from stdin."
+        "If neither -f nor -e is passed, will read input from stdin.",
+        "",
+        "Parsed input may be encoded as JSON to file using the -a flag."
       ]
 
 futhark :: RemoraMode
@@ -113,7 +117,7 @@ main = do
   passed_mode <- cmdArgsRun mode
   case passed_mode of
     REPL -> CLI.REPL.repl
-    Interpret mfile mexpr -> do
+    Interpret mfile mexpr mast -> do
       input <- handleInput mfile mexpr
       let m = do
             expr <- doParse mfile input
@@ -122,6 +126,9 @@ main = do
       case m of
         Left err -> T.putStrLn err
         Right v ->  T.putStrLn $ prettyText v
+      case (mast, doParse mfile input) of
+        (Just astFile, Right expr) -> B.writeFile astFile (encode expr)
+        (_, _)      -> return ()
     Futhark mfile mexpr mbackend -> do
       input <- handleInput mfile mexpr
       let m = do
